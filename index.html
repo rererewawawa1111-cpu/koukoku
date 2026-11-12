@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>極小×ボタン早押しRTA (Close the Ad! Speedrun)</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="logo-area">
+            <h1>広告×ボタン早押し 10 ROUND RTA <span class="badge-rta">SPEEDRUN</span></h1>
+        </div>
+        <div class="header-right" style="display:flex; align-items:center; gap:12px;">
+            <button id="btn-toggle-sound" class="btn-sound">🔊 サウンドON</button>
+            <span style="font-size: 0.85rem; color: #8e9bb0;">全10問の凶悪広告を素早く閉じろ！誤クリックは +3.00s ペナルティ！</span>
+        </div>
+    </header>
+
+    <main class="app-container">
+        <!-- 左カラム: LiveSplit風 スプリット＆タイマー -->
+        <section class="sidebar-timer">
+            <div class="timer-box">
+                <div class="timer-label">TOTAL TIME</div>
+                <div id="main-timer" class="main-timer">00:00.000</div>
+                <div id="round-timer" class="round-timer">区間: 00:00.000</div>
+            </div>
+
+            <div class="splits-header">
+                <span>ROUND / 広告名</span>
+                <span>差分 / PB</span>
+            </div>
+            <div id="splits-list" class="splits-list">
+                <!-- JavaScriptで生成 -->
+            </div>
+
+            <div class="controls-box">
+                <button id="btn-start-rta" class="btn-start">RTA スタート！</button>
+                <button id="btn-reset-rta" class="btn-reset">リセット</button>
+            </div>
+        </section>
+
+        <!-- 中央: 広告プレイエリア（スマホ枠） -->
+        <section class="play-stage">
+            <div class="stage-header">
+                <div id="round-indicator" class="round-indicator">ROUND 1 / 10</div>
+                <div class="rule-hint">💡 偽の×や広告本体をクリックするとストア行き (+3秒加算)</div>
+            </div>
+
+            <div class="phone-mockup">
+                <div id="ad-area" class="ad-area">
+                    <div id="ad-placeholder" class="ad-placeholder">
+                        <div class="start-hint">「RTA スタート！」を押すと計測が始まります</div>
+                    </div>
+                </div>
+
+                <!-- 誤クリック時のペナルティ演出 -->
+                <div id="penalty-overlay" class="penalty-overlay hidden">
+                    <div class="fake-store-card">
+                        <div style="font-size: 2.2rem; margin-bottom: 6px;">🛒</div>
+                        <h3>App Store へ強制移動！</h3>
+                        <p style="font-size:0.8rem; color:#666;">「広告のトラップに引っかかりました…」</p>
+                        <div id="penalty-count" class="penalty-count">MISCLICK! +3.00s PENALTY</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 右カラム: データベース連動 リーダーボード & 分析ダッシュボード -->
+        <section class="sidebar-db">
+            <div class="tabs-nav">
+                <button class="tab-btn active" data-tab="leaderboard">🏆 ランキング</button>
+                <button class="tab-btn" data-tab="stats">📊 DB分析・統計</button>
+            </div>
+
+            <!-- タブ1: リーダーボード (runs テーブル) -->
+            <div id="tab-leaderboard" class="tab-panel active">
+                <div class="filter-pills-bar">
+                    <button class="filter-pill active" data-filter="overall">総合最速</button>
+                    <button class="filter-pill" data-filter="no_miss">ノーミス</button>
+                    <button class="filter-pill" data-filter="recent">最新記録</button>
+                </div>
+                <div class="table-scroll-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>順位</th>
+                                <th>走者名</th>
+                                <th>ランク</th>
+                                <th>タイム</th>
+                                <th>ミス</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboard-body">
+                            <!-- JSで動的生成 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- タブ2: DB統計・分析 (splits テーブル集計) -->
+            <div id="tab-stats" class="tab-panel">
+                <div id="stats-container">
+                    <!-- JSで動的生成 -->
+                </div>
+                <div style="margin-top: auto; padding-top: 14px; text-align: right;">
+                    <button id="btn-clear-db" class="btn-danger">記録全削除</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- RTA完走モーダル -->
+    <div id="result-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2>🎉 RTA FINISH!</h2>
+            <div style="font-size: 0.9rem; color: #8e9bb0;">全10ラウンド広告閉鎖 達成！</div>
+            
+            <div id="result-rank" class="rank-badge rank-s">S</div>
+
+            <div style="display:flex; justify-content:space-around; margin:12px 0;">
+                <div>
+                    <div style="font-size:0.75rem; color:#8e9bb0;">総合タイム</div>
+                    <div id="result-time" style="font-size:1.6rem; font-weight:800; color:#00f2fe; font-family:Consolas, monospace;">00:00.000</div>
+                </div>
+                <div>
+                    <div style="font-size:0.75rem; color:#8e9bb0;">総ミス回数</div>
+                    <div id="result-misses" style="font-size:1.2rem; font-weight:bold; color:#ff3b30; margin-top:4px;">0 回</div>
+                </div>
+            </div>
+
+            <!-- スプリット内訳 -->
+            <div class="splits-result-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Round</th>
+                            <th>広告</th>
+                            <th>区間タイム</th>
+                            <th>ミス</th>
+                        </tr>
+                    </thead>
+                    <tbody id="result-splits-table">
+                        <!-- JS挿入 -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- DBへの記録保存 -->
+            <div class="player-input-group">
+                <input type="text" id="player-name-input" placeholder="走者名を入力 (例: 広告バスター)" maxlength="15" value="広告キラー">
+                <button id="btn-save-record">DBに記録保存</button>
+            </div>
+
+            <div class="modal-actions">
+                <button id="btn-play-again" class="btn-start" style="width: 100%;">もう一度挑戦する</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- スクリプト -->
+    <script src="sound.js"></script>
+    <script src="db.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
